@@ -26,8 +26,7 @@ setopt appendhistory
 setopt sharehistory
 setopt incappendhistory
 
-# Starship and Zoxide
-eval "$(starship init zsh)"
+# Zoxide
 eval "$(zoxide init zsh)"
 
 
