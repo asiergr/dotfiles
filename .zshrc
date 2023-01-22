@@ -1,3 +1,10 @@
+# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
+# Initialization code that may require console input (password prompts, [y/n]
+# confirmations, etc.) must go above this block; everything else may go below.
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
 # Exports
 export EDITOR="nvim"
 export CLICOLOR=1
@@ -7,16 +14,13 @@ export PATH=$HOME/bin:$HOME/.cargo/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin
 
 # Aliases
 alias less="less -R"
-alias grep="grep --color=auto"
+alias grep="rg"
 alias cat="bat -p --paging=never"
 alias ls=exa
 alias l="exa -l"
 alias ll="exa -al"
 alias vim=nvim
 alias config='/usr/bin/git --git-dir=/Users/asier/.cfg/ --work-tree=/Users/asier'
-# Aliases for Homebrew and Rosetta
-alias brewr="arch -x86_64 /usr/local/bin/brew $@"
-alias leg="arch -x86_64 $@"
 
 # History
 HISTFILE=~/.zsh_history
@@ -45,3 +49,10 @@ fi
 unset __conda_setup
 # <<< conda initialize <<<
 
+source /opt/homebrew/opt/powerlevel10k/powerlevel10k.zsh-theme
+
+# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+export DBUS_LAUNCHD_SESSION_BUS_SOCKET=$(launchctl getenv DBUS_LAUNCHD_SESSION_BUS_SOCKET)
+export DBUS_SESSION_BUS_ADDRESS="unix:path=$DBUS_LAUNCHD_SESSION_BUS_SOCKET" 
