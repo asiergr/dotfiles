@@ -13,6 +13,7 @@ export BAT_THEME="Nord"
 export PATH=$HOME/bin:$HOME/.cargo/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/usr/sbin:/sbin:/bin:/Library/TeX/texbin
 
 # Aliases
+alias find=fd
 alias less="less -R"
 alias grep="rg"
 alias cat="bat -p --paging=never"

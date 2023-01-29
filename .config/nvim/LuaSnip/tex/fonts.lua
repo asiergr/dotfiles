@@ -76,10 +76,10 @@ return
         }
       )
     ),
-    -- MATH BOLDFACE i.e. \mathbf
+    -- MATH BOLDFACE i.e. \bm
     s({trig = "([^%a])mbf", regTrig = true, wordTrig = false, snippetType="autosnippet"},
       fmta(
-        "<>\\mathbf{<>}",
+        "<>\\bm{<>}",
         {
           f( function(_, snip) return snip.captures[1] end ),
           d(1, get_visual),

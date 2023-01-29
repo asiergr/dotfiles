@@ -59,7 +59,15 @@ return
       },
       {condition = tex.in_mathzone}
     ),
-    s({trig="forall", snippetType="autosnippet"},
+    s({trig="st", snippetType="autosnippet"},
+      {
+        t("\\text{such that}"),
+      },
+      {condition = tex.in_mathzone}
+    ),
+    -- Text "for all" bc i want to keep veing able to use \forall
+    -- Text "for all" bc i want to keep veing able to use \forall
+    s({trig="tforall", snippetType="autosnippet"},
       {
         t("\\text{ for all } "),
       },
