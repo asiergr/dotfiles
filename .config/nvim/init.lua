@@ -1,5 +1,7 @@
 require("plugins")
 
+-- luacheck: globals vim -- Stops luacheck from freaking out everywhere
+require("string")
 -- for nvim-tree, disable netrw at the very start of your init.lua (strongly advised)
 vim.g.loaded_netrw = 1
 
@@ -13,6 +15,10 @@ vim.opt.expandtab = true
 -- Set relative numbering
 vim.opt.relativenumber = true
 vim.opt.number = true
+
+-- Remap for copy paste with C-c, C-v
+vim.keymap.set("v", "<C-c>", ":w !pbcopy<CR><CR>")
+vim.keymap.set("n", "<C-v>", ":r !pbpaste<CR><CR>")
 
 -- Remap to stop highlight after pattern search
 vim.keymap.set("n", "<Leader>/", ":noh<cr>")
@@ -34,7 +40,7 @@ vim.keymap.set("t", "<Esc>", "<C-\\><C-n>")
 
 -- This is necessary for VimTeX to load properly. The "indent" is optional.
 -- Note that most plugin managers will do this automatically.
-vim.cmd([[filetype plugin indent on]])
+vim.cmd("filetype plugin indent on")
 
 -- This enables Vim's and neovim's syntax-related features. Without this, some
 -- VimTeX features will not work (see ":help vimtex-requirements" for more
@@ -50,28 +56,21 @@ vim.g.vimtex_view_enabled = 1
 -- strongly recommended, you probably don't need to configure anything. If you
 -- want another compiler backend, you can change it as follows. The list of
 -- supported backends and further explanation is provided in the documentation,
--- see ":help vimtex-compiler".
--- vim.g.vimtex_compiler_method = 'latexrun'
 
 -- Config options inspired by castel.dev
 vim.g.tex_flavor = "latex"
 vim.g.vimtex_quickfix_mode = 0
 vim.g.vimtex_quickfix_open_on_warning = 0
-vim.g.vimtex_syntax_enabled = 1
-vim.g.setconceallevel = 2
 vim.g.vimtex_imaps_enabled = 0 -- disable vimtex snippets
+vim.cmd([[autocmd BufEnter *.tex set conceallevel=2]])
 
 vim.g.vimtex_format_enabled = 1
 
 vim.keymap.set("n", "<localleader>c", "<Plug>(vimtex-compile)")
 vim.keymap.set("n", "<localleader>v", "<Plug>(vimtex-view)")
 
-local function tex_focus_vim()
-	vim.cmd([[silent execute "!open -a kitty"]])
-	vim.cmd([[redraw!]])
-end
-
-vim.cmd([[function! s:TexFocusVim() abort
+vim.cmd([[
+function! s:TexFocusVim() abort
   silent execute "!open -a kitty"
   redraw!
 endfunction
@@ -79,7 +78,8 @@ endfunction
 augroup vimtex_event_focus
   au!
   au User VimtexEventViewReverse call s:TexFocusVim()
-augroup END]])
+augroup END
+]])
 -- End of Vimtex Config
 
 -- Theme
@@ -172,6 +172,10 @@ require("nvim-tree").setup(config)
 -- TreeSitter
 require("nvim-treesitter.configs").setup({
 	ensure_installed = { "python", "rust", "latex" },
+	highlight = {
+		enable = true,
+		disable = { "latex" }, -- since Vimtex has highlighting of its own
+	},
 })
 -- end TreeSitter
 
@@ -218,9 +222,9 @@ require("indent_blankline").setup({
 
 --nvim cmp
 local has_words_before = function()
-  unpack = unpack or table.unpack
-  local line, col = unpack(vim.api.nvim_win_get_cursor(0))
-  return col ~= 0 and vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match("%s") == nil
+	unpack = unpack or table.unpack
+	local line, col = unpack(vim.api.nvim_win_get_cursor(0))
+	return col ~= 0 and vim.api.nvim_buf_get_lines(0, line - 1, line, true)[1]:sub(col, col):match("%s") == nil
 end
 
 local cmp = require("cmp")
@@ -239,10 +243,11 @@ cmp.setup({
 		["<C-b>"] = cmp.mapping.scroll_docs(-4),
 		["<C-f>"] = cmp.mapping.scroll_docs(4),
 		["<C-Space>"] = cmp.mapping.complete(),
-		["<ESC>"] = cmp.mapping.abort(),
-		["<CR>"] = cmp.mapping.confirm({ select = true }), -- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
+		["<C-e>"] = cmp.mapping.abort(),
+		-- Accept currently selected item. Set `select` to `false` to only confirm explicitly selected items.
+		["<CR>"] = cmp.mapping.confirm({ select = true }),
 
-		["<Tab>"] = cmp.mapping(function(fallback)
+		["<Up>"] = cmp.mapping(function(fallback)
 			if cmp.visible() then
 				cmp.select_next_item()
 			-- You could replace the expand_or_jumpable() calls with expand_or_locally_jumpable()
@@ -256,7 +261,7 @@ cmp.setup({
 			end
 		end, { "i", "s" }),
 
-		["<S-Tab>"] = cmp.mapping(function(fallback)
+		["<Down>"] = cmp.mapping(function(fallback)
 			if cmp.visible() then
 				cmp.select_prev_item()
 			elseif luasnip.jumpable(-1) then
@@ -336,18 +341,29 @@ local on_attach = function(client, bufnr)
 	vim.keymap.set("n", "gr", vim.lsp.buf.references, bufopts)
 end
 
-vim.cmd([[
-let g:coq_settings = { "keymap.recommended": v:false }
-ino <silent><expr> <Esc>   pumvisible() ? "\<C-e><Esc>" : "\<Esc>"
-ino <silent><expr> <C-c>   pumvisible() ? "\<C-e><C-c>" : "\<C-c>"
-ino <silent><expr> <BS>    pumvisible() ? "\<C-e><BS>"  : "\<BS>"
-ino <silent><expr> <CR>    pumvisible() ? (complete_info().selected == -1 ? "\<C-e><CR>" : "\<C-y>") : "\<CR>"
-ino <silent><expr> <Up>   pumvisible() ? "\<C-n>" : "\<Tab>"
-ino <silent><expr> <Down> pumvisible() ? "\<C-p>" : "\<BS>"]])
 local lsp = require("lspconfig")
 
-lsp.pylsp.setup({ on_attach = on_attach, capabilities = capabilities })
-lsp.sumneko_lua.setup({ on_attach = on_attach, capabilities = capabilities })
+lsp.pylsp.setup({
+	on_attach = on_attach,
+	capabilities = capabilities,
+	settings = {
+		pylsp = {
+			configurationSources = { "flake8" },
+		},
+	},
+})
+lsp.lua_ls.setup({
+	settings = {
+		Lua = {
+			diagnostics = {
+				-- Get the language server to recognize the `vim` global
+				globals = { "vim" },
+			},
+		},
+	},
+	on_attach = on_attach,
+	capabilities = capabilities,
+})
 lsp.texlab.setup({ on_attach = on_attach, capabilities = capabilities })
 
 -- End LSP Configs and COQ
@@ -357,7 +373,6 @@ lsp.texlab.setup({ on_attach = on_attach, capabilities = capabilities })
 
 vim.keymap.set("n", "<leader>f", ":Format<CR>")
 vim.keymap.set("n", "<leader>F", ":FormatWrite<CR>")
-
 -- Provides the Format, FormatWrite, FormatLock, and FormatWriteLock commands
 require("formatter").setup({
 	-- All formatter configurations are opt-in
@@ -368,14 +383,17 @@ require("formatter").setup({
 			-- "formatter.filetypes.lua" defines default configurations for the
 			-- "lua" filetype
 			require("formatter.filetypes.lua").stylua,
+		},
 
-			-- Use the special "*" filetype for defining formatter configurations on
-			-- any filetype
-			["*"] = {
-				-- "formatter.filetypes.any" defines default configurations for any
-				-- filetype
-				require("formatter.filetypes.any").remove_trailing_whitespace,
-			},
+		tex = {
+			require("formatter.filetypes.latex").latexindent,
+		},
+		-- Use the special "*" filetype for defining formatter configurations on
+		-- any filetype
+		["*"] = {
+			-- "formatter.filetypes.any" defines default configurations for any
+			-- filetype
+			require("formatter.filetypes.any").remove_trailing_whitespace,
 		},
 	},
 })
@@ -403,30 +421,19 @@ vim.keymap.set("n", "<leader>fh", builtin.help_tags, {})
 -- Begin telescope
 
 -- begin barbar
-local map = vim.api.nvim_set_keymap
 local opts = { noremap = true, silent = true }
 
 -- Move to previous/next
-vim.keymap.set("n", "<A-,>", "<Cmd>BufferPrevious<CR>", opts)
-vim.keymap.set("n", "<A-.>", "<Cmd>BufferNext<CR>", opts)
+-- These binds look weird bc OS X has extended keys for Alt-KEY
+vim.keymap.set("n", "<C-,>", "<Cmd>BufferPrevious<CR>", opts)
+vim.keymap.set("n", "<C-.>", "<Cmd>BufferNext<CR>", opts)
 -- Re-order to previous/next
-vim.keymap.set("n", "<A-<>", "<Cmd>BufferMovePrevious<CR>", opts)
-vim.keymap.set("n", "<A->>", "<Cmd>BufferMoveNext<CR>", opts)
--- Goto buffer in position...
-vim.keymap.set("n", "<A-1>", "<Cmd>BufferGoto 1<CR>", opts)
-vim.keymap.set("n", "<A-2>", "<Cmd>BufferGoto 2<CR>", opts)
-vim.keymap.set("n", "<A-3>", "<Cmd>BufferGoto 3<CR>", opts)
-vim.keymap.set("n", "<A-4>", "<Cmd>BufferGoto 4<CR>", opts)
-vim.keymap.set("n", "<A-5>", "<Cmd>BufferGoto 5<CR>", opts)
-vim.keymap.set("n", "<A-6>", "<Cmd>BufferGoto 6<CR>", opts)
-vim.keymap.set("n", "<A-7>", "<Cmd>BufferGoto 7<CR>", opts)
-vim.keymap.set("n", "<A-8>", "<Cmd>BufferGoto 8<CR>", opts)
-vim.keymap.set("n", "<A-9>", "<Cmd>BufferGoto 9<CR>", opts)
-vim.keymap.set("n", "<A-0>", "<Cmd>BufferLast<CR>", opts)
+vim.keymap.set("n", "<A-Left>", "<Cmd>BufferMovePrevious<CR>", opts)
+vim.keymap.set("n", "<A-Right>", "<Cmd>BufferMoveNext<CR>", opts)
 -- Pin/unpin buffer
-vim.keymap.set("n", "<A-p>", "<Cmd>BufferPin<CR>", opts)
+vim.keymap.set("n", "<π>", "<Cmd>BufferPin<CR>", opts) -- A-p
 -- Close buffer
-vim.keymap.set("n", "<A-c>", "<Cmd>BufferClose<CR>", opts)
+vim.keymap.set("n", "<ç>", "<Cmd>BufferClose<CR>", opts) -- A-c
 -- Wipeout buffer
 --                 :BufferWipeout
 -- Close commands
@@ -443,24 +450,53 @@ vim.keymap.set("n", "<Space>bd", "<Cmd>BufferOrderByDirectory<CR>", opts)
 vim.keymap.set("n", "<Space>bl", "<Cmd>BufferOrderByLanguage<CR>", opts)
 vim.keymap.set("n", "<Space>bw", "<Cmd>BufferOrderByWindowNumber<CR>", opts)
 
--- So that nvim tree doesnt look weird
-local nvim_tree_events = require("nvim-tree.events")
-local bufferline_api = require("bufferline.api")
+-- End barbar
 
-local function get_tree_size()
-	return require("nvim-tree.view").View.width
-end
+-- Start nvim-surround
+require("nvim-surround").setup({})
+-- End nvim-surround
 
-nvim_tree_events.subscribe("TreeOpen", function()
-	bufferline_api.set_offset(get_tree_size())
-end)
+-- start nvim-autopairs
+-- If you want insert `(` after select function or method item
+require("nvim-autopairs").setup({})
+local cmp_autopairs = require("nvim-autopairs.completion.cmp")
+local handlers = require("nvim-autopairs.completion.handlers")
+cmp.event:on(
+	"confirm_done",
+	cmp_autopairs.on_confirm_done({
+		["*"] = {
+			["("] = {
+				kind = {
+					cmp.lsp.CompletionItemKind.Function,
+					cmp.lsp.CompletionItemKind.Method,
+				},
+				handler = handlers["*"],
+			},
+		},
+		lua = {
+			["("] = {
+				kind = {
+					cmp.lsp.CompletionItemKind.Function,
+					cmp.lsp.CompletionItemKind.Method,
+				},
+			},
+		},
+		latex = {
+			["{"] = {
+				kind = {
+					cmp.lsp.CompletionItemKind.Function,
+					cmp.lsp.CompletionItemKind.Method,
+				},
+			},
+		},
+	})
+)
+-- End nvim-autopairs
 
-nvim_tree_events.subscribe("Resize", function()
-	bufferline_api.set_offset(get_tree_size())
-end)
+-- start lsp-signature
+require("lsp_signature").setup({})
+-- end lsp-signature
 
-nvim_tree_events.subscribe("TreeClose", function()
-	bufferline_api.set_offset(0)
-end)
-
--- End barbr
+-- start tabout
+require("tabout").setup({})
+-- end tabout

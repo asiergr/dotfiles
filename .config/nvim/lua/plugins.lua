@@ -36,11 +36,15 @@ return require("packer").startup(function(use)
 		"hrsh7th/cmp-path",
 		"hrsh7th/cmp-cmdline",
 		"hrsh7th/nvim-cmp",
-        "petertriho/cmp-git",
+		"petertriho/cmp-git",
 		"saadparwaiz1/cmp_luasnip",
 	})
 	use({ "mhartington/formatter.nvim" })
 	use({ "mfussenegger/nvim-lint" })
 	use({ "nvim-telescope/telescope.nvim", branch = "0.1.x" })
 	use({ "romgrk/barbar.nvim" })
+	use({ "kylechui/nvim-surround" })
+	use({ "ray-x/lsp_signature.nvim" })
+	use({ "windwp/nvim-autopairs" })
+	use({ "abecodes/tabout.nvim" })
 end)
